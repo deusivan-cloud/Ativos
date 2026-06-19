@@ -171,7 +171,7 @@
 <script>
 // ─── CONFIG ────────────────────────────────────────────────────────────────────
 const SCRIPT_URL_KEY = "ati_script_url";
-let SCRIPT_URL = "https://script.google.com/macros/s/AKfycbx8kTdFQ3dBxlQ_P553PPUXl0VC3ZKfEr2F1rHiYNbuwdOrS-uO8gXV4tt0s5XOiJvEbA/exec";
+let SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzijbUSKPekACi2ImZyNYCX0bujt3cbXRkfqaD7cpOs7uBJV4VnyGphzmVNj6ye8HQfqQ/exec";
 
 const ASSET_TYPES = {
   celular:  { label: "Celular",   icon: "📱", color: "#6C63FF" },
@@ -270,28 +270,29 @@ function toast(msg, error = false) {
 }
 
 // ─── API ───────────────────────────────────────────────────────────────────────
-async function api(params) {
-  if (!SCRIPT_URL) { toast("Configure a URL do Apps Script primeiro.", true); return null; }
-  try {
-    const isGet = params.action === "list";
-    if (isGet) {
-      const url = SCRIPT_URL + "?action=list";
-      const res = await fetch(url);
-      return await res.json();
-    } else {
-      const formData = new FormData();
-      formData.append("payload", JSON.stringify(params));
-      const res = await fetch(SCRIPT_URL, {
-        method: "POST",
-        body: JSON.stringify(params),
-        headers: { "Content-Type": "text/plain" }
-      });
-      return await res.json();
-    }
-  } catch (e) {
-    toast("Erro de conexão com a planilha.", true);
-    return null;
-  }
+function api(params) {
+  if (!SCRIPT_URL) { toast("Configure a URL do Apps Script primeiro.", true); return Promise.resolve(null); }
+  return new Promise((resolve) => {
+    const cbName = "cb_" + Date.now();
+    const action = params.action;
+    const data = encodeURIComponent(JSON.stringify(params));
+    const url = SCRIPT_URL + "?action=" + action + "&data=" + data + "&callback=" + cbName;
+    window[cbName] = (result) => {
+      delete window[cbName];
+      document.getElementById("jsonp_script")?.remove();
+      resolve(result);
+    };
+    const script = document.createElement("script");
+    script.id = "jsonp_script";
+    script.src = url;
+    script.onerror = () => {
+      delete window[cbName];
+      script.remove();
+      toast("Erro de conexão com a planilha.", true);
+      resolve(null);
+    };
+    document.body.appendChild(script);
+  });
 }
 
 async function loadAssets() {
