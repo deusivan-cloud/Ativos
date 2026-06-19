@@ -171,7 +171,7 @@
 <script>
 // ─── CONFIG ────────────────────────────────────────────────────────────────────
 const SCRIPT_URL_KEY = "ati_script_url";
-let SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzBk8QjJTkxBTPUAnYwAHDA7QuBPXmNgP7uKkTMpytpcNVI81lAzdK65NEYNgMpn_uoJg/exec";
+let SCRIPT_URL = "https://script.google.com/macros/s/AKfycbx8kTdFQ3dBxlQ_P553PPUXl0VC3ZKfEr2F1rHiYNbuwdOrS-uO8gXV4tt0s5XOiJvEbA/exec";
 
 const ASSET_TYPES = {
   celular:  { label: "Celular",   icon: "📱", color: "#6C63FF" },
@@ -271,14 +271,23 @@ function toast(msg, error = false) {
 
 // ─── API ───────────────────────────────────────────────────────────────────────
 async function api(params) {
-  // always show config if no url
-if (!SCRIPT_URL) { toast("Configure a URL do Apps Script primeiro.", true); return null; }
+  if (!SCRIPT_URL) { toast("Configure a URL do Apps Script primeiro.", true); return null; }
   try {
     const isGet = params.action === "list";
-    const url   = isGet ? SCRIPT_URL + "?action=list" : SCRIPT_URL;
-    const opts  = isGet ? {} : { method: "POST", body: JSON.stringify(params) };
-    const res   = await fetch(url, opts);
-    return await res.json();
+    if (isGet) {
+      const url = SCRIPT_URL + "?action=list";
+      const res = await fetch(url);
+      return await res.json();
+    } else {
+      const formData = new FormData();
+      formData.append("payload", JSON.stringify(params));
+      const res = await fetch(SCRIPT_URL, {
+        method: "POST",
+        body: JSON.stringify(params),
+        headers: { "Content-Type": "text/plain" }
+      });
+      return await res.json();
+    }
   } catch (e) {
     toast("Erro de conexão com a planilha.", true);
     return null;
