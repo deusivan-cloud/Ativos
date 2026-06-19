@@ -1,0 +1,541 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Gestão de Ativos TI</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', sans-serif; background: #F5F5FB; min-height: 100vh; }
+
+  /* HEADER */
+  .header { background: #1A1A2E; color: #fff; padding: 20px 28px 0; }
+  .header-top { display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 12px; }
+  .header-eyebrow { font-size: 11px; font-weight: 600; letter-spacing: .1em; color: #A8A8C8; text-transform: uppercase; margin-bottom: 4px; }
+  .header-title { font-size: 26px; font-weight: 800; letter-spacing: -.02em; }
+  .btn-new { padding: 10px 20px; background: #6C63FF; color: #fff; border: none; border-radius: 10px; font-weight: 700; font-size: 14px; cursor: pointer; box-shadow: 0 4px 14px rgba(108,99,255,.4); white-space: nowrap; }
+  .btn-new:hover { background: #5a52e0; }
+
+  /* SUMMARY CARDS */
+  .summary { display: flex; gap: 12px; margin-top: 20px; overflow-x: auto; padding-bottom: 16px; }
+  .summary-card { background: rgba(255,255,255,.07); border-radius: 10px; padding: 10px 18px; min-width: 110px; flex-shrink: 0; }
+  .summary-card .icon { font-size: 20px; }
+  .summary-card .num { font-size: 22px; font-weight: 800; line-height: 1.2; }
+  .summary-card .lbl { font-size: 12px; color: #A8A8C8; font-weight: 500; }
+
+  /* FILTERS */
+  .filters { padding: 14px 28px 10px; background: #fff; border-bottom: 1px solid #EBEBEB; display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+  .search-input { flex: 1; min-width: 200px; padding: 8px 14px; border-radius: 8px; border: 1.5px solid #E0E0E0; font-size: 14px; outline: none; background: #FAFAFA; }
+  .pills { display: flex; gap: 6px; flex-wrap: wrap; }
+  .pill { padding: 6px 14px; border-radius: 20px; font-size: 13px; font-weight: 500; cursor: pointer; border: 1.5px solid #E0E0E0; background: #fff; color: #555; transition: all .15s; }
+  .pill.active { border: none; color: #fff; font-weight: 700; }
+
+  /* GRID */
+  .grid { padding: 20px 28px; display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 14px; }
+
+  /* ASSET CARD */
+  .card { background: #fff; border-radius: 14px; padding: 18px; box-shadow: 0 2px 8px rgba(0,0,0,.06); display: flex; flex-direction: column; gap: 10px; }
+  .card-header { display: flex; justify-content: space-between; align-items: flex-start; }
+  .card-icon-info { display: flex; align-items: center; gap: 8px; }
+  .card-icon { font-size: 22px; }
+  .card-modelo { font-weight: 700; font-size: 15px; color: #1A1A2E; line-height: 1.2; }
+  .card-patrimonio { font-size: 12px; color: #999; font-weight: 500; }
+  .card-serie-tag { margin-left: 6px; color: #BBB; }
+  .status-badge { font-size: 11px; font-weight: 700; padding: 3px 10px; border-radius: 20px; white-space: nowrap; }
+  .card-colaborador { display: flex; align-items: center; gap: 8px; background: #F5F5FB; border-radius: 8px; padding: 7px 10px; }
+  .card-colaborador span { font-size: 13px; font-weight: 600; color: #444; }
+  .card-empty-colab { font-size: 13px; color: #AAA; font-style: italic; }
+  .card-obs { font-size: 12px; color: #777; background: #FFFBEA; border-radius: 7px; padding: 6px 10px; border-left: 3px solid #F7931E; }
+  .card-actions { display: flex; gap: 8px; margin-top: 2px; }
+  .btn-edit { flex: 1; padding: 7px 0; border-radius: 8px; border: 1.5px solid #E0E0E0; background: #fff; cursor: pointer; font-size: 13px; font-weight: 600; color: #444; }
+  .btn-edit:hover { background: #F5F5FB; }
+  .btn-del { padding: 7px 14px; border-radius: 8px; border: 1.5px solid #FEE2E2; background: #FEF2F2; cursor: pointer; font-size: 13px; font-weight: 600; color: #DC2626; }
+  .btn-del:hover { background: #FEE2E2; }
+
+  /* EMPTY */
+  .empty { grid-column: 1/-1; text-align: center; color: #999; padding-top: 60px; }
+  .empty .e-icon { font-size: 40px; }
+  .empty .e-msg { margin-top: 8px; font-weight: 600; }
+
+  /* MODAL */
+  .overlay { position: fixed; inset: 0; background: rgba(0,0,0,.45); z-index: 50; display: flex; align-items: center; justify-content: center; padding: 16px; }
+  .modal { background: #fff; border-radius: 16px; width: 100%; max-width: 480px; box-shadow: 0 24px 48px rgba(0,0,0,.18); overflow: hidden; }
+  .modal-head { padding: 20px 24px 16px; border-bottom: 1px solid #F0F0F0; display: flex; justify-content: space-between; align-items: center; }
+  .modal-title { font-weight: 700; font-size: 17px; color: #1A1A2E; }
+  .modal-close { background: none; border: none; font-size: 22px; cursor: pointer; color: #888; line-height: 1; }
+  .modal-body { padding: 20px 24px 24px; display: flex; flex-direction: column; gap: 14px; }
+  .field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .field label { font-size: 12px; font-weight: 600; color: #555; margin-bottom: 4px; display: block; text-transform: uppercase; letter-spacing: .04em; }
+  .field input, .field select, .field textarea { width: 100%; padding: 9px 12px; border: 1.5px solid #E0E0E0; border-radius: 8px; font-size: 14px; outline: none; background: #FAFAFA; color: #1A1A2E; font-family: inherit; }
+  .field textarea { resize: vertical; }
+  .modal-actions { display: flex; gap: 10px; justify-content: flex-end; margin-top: 4px; }
+  .btn-cancel { padding: 9px 20px; border-radius: 8px; border: 1.5px solid #E0E0E0; background: #fff; cursor: pointer; font-size: 14px; font-weight: 600; color: #555; }
+  .btn-save { padding: 9px 22px; border-radius: 8px; border: none; background: #6C63FF; color: #fff; cursor: pointer; font-size: 14px; font-weight: 700; box-shadow: 0 2px 8px rgba(108,99,255,.25); }
+  .btn-save:hover { background: #5a52e0; }
+  .btn-confirm-del { padding: 9px 22px; border-radius: 8px; border: none; background: #DC2626; color: #fff; cursor: pointer; font-size: 14px; font-weight: 700; }
+
+  /* CONFIG BANNER */
+  .config-banner { background: #FFF8E1; border: 1.5px solid #FFD54F; border-radius: 12px; padding: 16px 20px; margin: 20px 28px 0; display: flex; gap: 12px; align-items: flex-start; }
+  .config-banner .cb-icon { font-size: 22px; flex-shrink: 0; }
+  .config-banner .cb-title { font-weight: 700; font-size: 14px; color: #7B5800; margin-bottom: 4px; }
+  .config-banner .cb-text { font-size: 13px; color: #7B5800; line-height: 1.5; }
+  .config-banner a { color: #6C63FF; font-weight: 600; }
+  .config-banner input { margin-top: 8px; width: 100%; padding: 7px 10px; border-radius: 8px; border: 1.5px solid #FFD54F; font-size: 13px; outline: none; background: #FFFBEA; }
+  .btn-connect { margin-top: 8px; padding: 7px 16px; background: #6C63FF; color: #fff; border: none; border-radius: 8px; font-size: 13px; font-weight: 700; cursor: pointer; }
+
+  /* LOADING */
+  .loading { text-align: center; padding: 60px 0; color: #999; font-size: 15px; grid-column: 1/-1; }
+  .spinner { display: inline-block; width: 28px; height: 28px; border: 3px solid #E0E0E0; border-top-color: #6C63FF; border-radius: 50%; animation: spin .7s linear infinite; margin-bottom: 10px; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* TOAST */
+  .toast { position: fixed; bottom: 24px; right: 24px; background: #1A1A2E; color: #fff; padding: 12px 20px; border-radius: 10px; font-size: 14px; font-weight: 600; z-index: 100; box-shadow: 0 8px 24px rgba(0,0,0,.2); opacity: 0; transform: translateY(10px); transition: all .3s; pointer-events: none; }
+  .toast.show { opacity: 1; transform: translateY(0); }
+  .toast.error { background: #DC2626; }
+</style>
+</head>
+<body>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<!-- HEADER -->
+<div class="header">
+  <div class="header-top">
+    <div>
+      <div class="header-eyebrow">Gestão de Ativos</div>
+      <div class="header-title">📦 TI Corporativo</div>
+    </div>
+    <button class="btn-new" onclick="openModal('add')">+ Novo Ativo</button>
+  </div>
+  <div class="summary" id="summary"></div>
+</div>
+
+<!-- CONFIG BANNER -->
+<div class="config-banner" id="configBanner" style="display:none">
+  <div class="cb-icon">⚙️</div>
+  <div style="flex:1">
+    <div class="cb-title">Configure a conexão com o Google Sheets</div>
+    <div class="cb-text">
+      Cole abaixo a URL do seu <strong>Google Apps Script</strong> para conectar a planilha.<br>
+      <a href="#" onclick="showInstructions()">Ver passo a passo de configuração</a>
+    </div>
+    <input type="text" id="scriptUrlInput" placeholder="https://script.google.com/macros/s/XXXXXXX/exec" />
+    <br><button class="btn-connect" onclick="saveScriptUrl()">Conectar</button>
+  </div>
+</div>
+
+<!-- FILTERS -->
+<div class="filters">
+  <input class="search-input" id="searchInput" placeholder="🔍  Buscar por modelo, patrimônio ou colaborador..." oninput="renderCards()" />
+  <div class="pills" id="pillsTipo"></div>
+  <div class="pills" id="pillsStatus"></div>
+</div>
+
+<!-- GRID -->
+<div class="grid" id="grid"></div>
+
+<!-- MODAL -->
+<div class="overlay" id="overlay" style="display:none" onclick="handleOverlayClick(event)">
+  <div class="modal" id="modal">
+    <div class="modal-head">
+      <span class="modal-title" id="modalTitle">Novo Ativo</span>
+      <button class="modal-close" onclick="closeModal()">×</button>
+    </div>
+    <div class="modal-body" id="modalBody"></div>
+  </div>
+</div>
+
+<!-- INSTRUCTIONS MODAL -->
+<div class="overlay" id="instrOverlay" style="display:none" onclick="if(event.target===this)this.style.display='none'">
+  <div class="modal" style="max-width:560px">
+    <div class="modal-head">
+      <span class="modal-title">⚙️ Como conectar ao Google Sheets</span>
+      <button class="modal-close" onclick="document.getElementById('instrOverlay').style.display='none'">×</button>
+    </div>
+    <div class="modal-body" style="font-size:14px;line-height:1.7;color:#444;gap:10px">
+      <p><strong>Passo 1 —</strong> Acesse <a href="https://sheets.new" target="_blank" style="color:#6C63FF">sheets.new</a> e crie uma planilha nova. Renomeie a aba para <code style="background:#F0F0F0;padding:1px 6px;border-radius:4px">Ativos</code>.</p>
+      <p><strong>Passo 2 —</strong> Na planilha, vá em <strong>Extensões → Apps Script</strong>.</p>
+      <p><strong>Passo 3 —</strong> Apague o código existente e cole o código abaixo:</p>
+      <textarea readonly rows="10" style="width:100%;font-size:12px;font-family:monospace;background:#1A1A2E;color:#A8F0A8;border:none;border-radius:8px;padding:10px;resize:vertical" id="appsScriptCode"></textarea>
+      <p><strong>Passo 4 —</strong> Clique em <strong>Salvar</strong> (ícone de disquete), depois em <strong>Implantar → Nova implantação</strong>.</p>
+      <p><strong>Passo 5 —</strong> Em "Tipo", selecione <strong>App da Web</strong>. Em "Quem tem acesso", escolha <strong>Qualquer pessoa</strong>. Clique em <strong>Implantar</strong>.</p>
+      <p><strong>Passo 6 —</strong> Copie a URL gerada e cole no campo de configuração da ferramenta.</p>
+      <div style="text-align:right;margin-top:8px">
+        <button class="btn-save" onclick="document.getElementById('instrOverlay').style.display='none'">Entendi!</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ─── CONFIG ────────────────────────────────────────────────────────────────────
+const SCRIPT_URL_KEY = "ati_script_url";
+let SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzBk8QjJTkxBTPUAnYwAHDA7QuBPXmNgP7uKkTMpytpcNVI81lAzdK65NEYNgMpn_uoJg/exec";
+
+const ASSET_TYPES = {
+  celular:  { label: "Celular",   icon: "📱", color: "#6C63FF" },
+  chip:     { label: "Chip",      icon: "💳", color: "#00C9A7" },
+  notebook: { label: "Notebook",  icon: "💻", color: "#F7931E" },
+};
+const STATUS_OPTIONS = ["Disponível", "Em uso", "Manutenção", "Descartado"];
+const STATUS_COLORS  = {
+  "Disponível": { bg: "#DCFCE7", text: "#16A34A" },
+  "Em uso":     { bg: "#DBEAFE", text: "#1D4ED8" },
+  "Manutenção": { bg: "#FEF9C3", text: "#B45309" },
+  "Descartado": { bg: "#FEE2E2", text: "#DC2626" },
+};
+
+let assets = [];
+let filterTipo   = "todos";
+let filterStatus = "todos";
+let editingId    = null;
+let deleteTarget = null;
+
+// ─── APPS SCRIPT CODE (shown in instructions) ─────────────────────────────────
+const APPS_SCRIPT = `const SHEET_NAME = "Ativos";
+
+function doGet(e) {
+  return handleRequest(e);
+}
+function doPost(e) {
+  return handleRequest(e);
+}
+
+function handleRequest(e) {
+  const action = (e.parameter && e.parameter.action) || (e.postData && JSON.parse(e.postData.contents).action);
+  const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEET_NAME);
+
+  if (!sheet.getLastRow() || sheet.getLastRow() < 1) {
+    sheet.appendRow(["id","tipo","modelo","patrimonio","serie","colaborador","status","observacao"]);
+  }
+
+  if (action === "list") {
+    const data = sheet.getDataRange().getValues();
+    const headers = data[0];
+    const rows = data.slice(1).map(r => {
+      const obj = {};
+      headers.forEach((h, i) => obj[h] = r[i]);
+      return obj;
+    });
+    return json({ ok: true, data: rows });
+  }
+
+  const body = JSON.parse(e.postData.contents);
+
+  if (action === "add") {
+    const id = Date.now();
+    sheet.appendRow([id, body.tipo, body.modelo, body.patrimonio, body.serie||"", body.colaborador||"", body.status, body.observacao||""]);
+    return json({ ok: true, id });
+  }
+
+  if (action === "update") {
+    const data = sheet.getDataRange().getValues();
+    for (let i = 1; i < data.length; i++) {
+      if (String(data[i][0]) === String(body.id)) {
+        sheet.getRange(i+1, 1, 1, 8).setValues([[body.id, body.tipo, body.modelo, body.patrimonio, body.serie||"", body.colaborador||"", body.status, body.observacao||""]]);
+        return json({ ok: true });
+      }
+    }
+    return json({ ok: false, error: "not found" });
+  }
+
+  if (action === "delete") {
+    const data = sheet.getDataRange().getValues();
+    for (let i = 1; i < data.length; i++) {
+      if (String(data[i][0]) === String(body.id)) {
+        sheet.deleteRow(i + 1);
+        return json({ ok: true });
+      }
+    }
+    return json({ ok: false, error: "not found" });
+  }
+
+  return json({ ok: false, error: "unknown action" });
+}
+
+function json(obj) {
+  return ContentService.createTextOutput(JSON.stringify(obj)).setMimeType(ContentService.MimeType.JSON);
+}`;
+
+document.getElementById("appsScriptCode").value = APPS_SCRIPT;
+
+// ─── TOAST ─────────────────────────────────────────────────────────────────────
+function toast(msg, error = false) {
+  const el = document.getElementById("toast");
+  el.textContent = msg;
+  el.className = "toast show" + (error ? " error" : "");
+  clearTimeout(el._t);
+  el._t = setTimeout(() => el.className = "toast", 3000);
+}
+
+// ─── API ───────────────────────────────────────────────────────────────────────
+async function api(params) {
+  // always show config if no url
+if (!SCRIPT_URL) { toast("Configure a URL do Apps Script primeiro.", true); return null; }
+  try {
+    const isGet = params.action === "list";
+    const url   = isGet ? SCRIPT_URL + "?action=list" : SCRIPT_URL;
+    const opts  = isGet ? {} : { method: "POST", body: JSON.stringify(params) };
+    const res   = await fetch(url, opts);
+    return await res.json();
+  } catch (e) {
+    toast("Erro de conexão com a planilha.", true);
+    return null;
+  }
+}
+
+async function loadAssets() {
+  renderGrid(null); // show loading
+  const res = await api({ action: "list" });
+  if (res && res.ok) {
+    assets = res.data || [];
+    renderAll();
+  } else {
+    renderGrid([]);
+  }
+}
+
+// ─── RENDER ────────────────────────────────────────────────────────────────────
+function renderAll() {
+  renderSummary();
+  renderPills();
+  renderCards();
+}
+
+function renderSummary() {
+  const counts = {};
+  Object.keys(ASSET_TYPES).forEach(t => counts[t] = assets.filter(a => a.tipo === t).length);
+  const disponivel = assets.filter(a => a.status === "Disponível").length;
+  const emUso = assets.filter(a => a.status === "Em uso").length;
+  const el = document.getElementById("summary");
+  el.innerHTML = Object.entries(ASSET_TYPES).map(([k, v]) =>
+    `<div class="summary-card" style="border-bottom:3px solid ${v.color}">
+      <div class="icon">${v.icon}</div>
+      <div class="num">${counts[k]}</div>
+      <div class="lbl">${v.label}s</div>
+    </div>`
+  ).join("") +
+  `<div class="summary-card" style="border-bottom:3px solid #00C9A7">
+    <div class="icon">✅</div><div class="num">${disponivel}</div><div class="lbl">Disponíveis</div>
+  </div>
+  <div class="summary-card" style="border-bottom:3px solid #6C63FF">
+    <div class="icon">👤</div><div class="num">${emUso}</div><div class="lbl">Em uso</div>
+  </div>`;
+}
+
+function renderPills() {
+  const pt = document.getElementById("pillsTipo");
+  const ps = document.getElementById("pillsStatus");
+  const makePill = (label, active, onclick, color) =>
+    `<button class="pill ${active ? 'active' : ''}" style="${active && color ? 'background:'+color : ''}" onclick="${onclick}">${label}</button>`;
+
+  pt.innerHTML = makePill("Todos", filterTipo === "todos", "setFilter('tipo','todos')")
+    + Object.entries(ASSET_TYPES).map(([k, v]) =>
+        makePill(`${v.icon} ${v.label}`, filterTipo === k, `setFilter('tipo','${k}')`, v.color)
+      ).join("");
+
+  ps.innerHTML = makePill("Todos status", filterStatus === "todos", "setFilter('status','todos')")
+    + STATUS_OPTIONS.map(s =>
+        makePill(s, filterStatus === s, `setFilter('status','${s}')`, STATUS_COLORS[s]?.text)
+      ).join("");
+}
+
+function setFilter(type, val) {
+  if (type === "tipo")   filterTipo   = val;
+  if (type === "status") filterStatus = val;
+  renderAll();
+}
+
+function renderCards() {
+  const q = document.getElementById("searchInput").value.toLowerCase();
+  const filtered = assets.filter(a => {
+    if (filterTipo !== "todos" && a.tipo !== filterTipo) return false;
+    if (filterStatus !== "todos" && a.status !== filterStatus) return false;
+    if (q) return (a.modelo + a.patrimonio + a.colaborador).toLowerCase().includes(q);
+    return true;
+  });
+  renderGrid(filtered);
+}
+
+function renderGrid(list) {
+  const el = document.getElementById("grid");
+  if (list === null) {
+    el.innerHTML = `<div class="loading"><div class="spinner"></div><br>Carregando...</div>`;
+    return;
+  }
+  if (!list.length) {
+    el.innerHTML = `<div class="empty"><div class="e-icon">📭</div><div class="e-msg">Nenhum ativo encontrado</div></div>`;
+    return;
+  }
+  el.innerHTML = list.map(a => {
+    const type = ASSET_TYPES[a.tipo] || { icon: "📦", color: "#999" };
+    const st   = STATUS_COLORS[a.status] || { bg: "#eee", text: "#666" };
+    const hasSerial = (a.tipo === "celular" || a.tipo === "notebook") && a.serie;
+    return `
+    <div class="card" style="border-top:3px solid ${type.color}">
+      <div class="card-header">
+        <div class="card-icon-info">
+          <span class="card-icon">${type.icon}</span>
+          <div>
+            <div class="card-modelo">${esc(a.modelo)}</div>
+            <div class="card-patrimonio">${esc(a.patrimonio)}${hasSerial ? `<span class="card-serie-tag">· S/N: ${esc(a.serie)}</span>` : ''}</div>
+          </div>
+        </div>
+        <span class="status-badge" style="background:${st.bg};color:${st.text}">${a.status}</span>
+      </div>
+      ${a.colaborador
+        ? `<div class="card-colaborador"><span>👤</span><span>${esc(a.colaborador)}</span></div>`
+        : `<div class="card-colaborador"><span class="card-empty-colab">Sem colaborador atribuído</span></div>`}
+      ${a.observacao ? `<div class="card-obs">${esc(a.observacao)}</div>` : ""}
+      <div class="card-actions">
+        <button class="btn-edit" onclick="openModal('edit', ${a.id})">✏️ Editar</button>
+        <button class="btn-del"  onclick="confirmDelete(${a.id})">🗑</button>
+      </div>
+    </div>`;
+  }).join("");
+}
+
+function esc(s) {
+  return String(s || "").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+}
+
+// ─── MODAL ────────────────────────────────────────────────────────────────────
+function openModal(mode, id) {
+  const asset = id != null ? assets.find(a => String(a.id) === String(id)) : null;
+  editingId = id || null;
+  document.getElementById("modalTitle").textContent = mode === "add" ? "Novo Ativo" : "Editar Ativo";
+  const f = asset || { tipo: "celular", modelo: "", patrimonio: "", serie: "", colaborador: "", status: "Disponível", observacao: "" };
+
+  document.getElementById("modalBody").innerHTML = `
+    <div class="field-row">
+      <div class="field">
+        <label>Tipo</label>
+        <select id="fTipo" onchange="toggleSerie()">
+          ${Object.entries(ASSET_TYPES).map(([k,v]) => `<option value="${k}" ${f.tipo===k?'selected':''}>${v.icon} ${v.label}</option>`).join("")}
+        </select>
+      </div>
+      <div class="field">
+        <label>Status</label>
+        <select id="fStatus">
+          ${STATUS_OPTIONS.map(s => `<option ${f.status===s?'selected':''}>${s}</option>`).join("")}
+        </select>
+      </div>
+    </div>
+    <div class="field">
+      <label>Modelo / Descrição</label>
+      <input id="fModelo" value="${esc(f.modelo)}" placeholder="Ex: Samsung Galaxy A54" />
+    </div>
+    <div class="field">
+      <label>Patrimônio / ID</label>
+      <input id="fPatrimonio" value="${esc(f.patrimonio)}" placeholder="Ex: CEL-003" />
+    </div>
+    <div class="field" id="serieField" style="${f.tipo!=='chip'?'':'display:none'}">
+      <label>Número de Série</label>
+      <input id="fSerie" value="${esc(f.serie||'')}" placeholder="Ex: R58N123ABC" />
+    </div>
+    <div class="field">
+      <label>Colaborador responsável</label>
+      <input id="fColab" value="${esc(f.colaborador)}" placeholder="Nome do colaborador (se atribuído)" />
+    </div>
+    <div class="field">
+      <label>Observações</label>
+      <textarea id="fObs" rows="2" placeholder="Informações adicionais...">${esc(f.observacao)}</textarea>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeModal()">Cancelar</button>
+      <button class="btn-save"   onclick="saveAsset()">Salvar</button>
+    </div>`;
+
+  document.getElementById("overlay").style.display = "flex";
+}
+
+function toggleSerie() {
+  const tipo = document.getElementById("fTipo").value;
+  document.getElementById("serieField").style.display = tipo !== "chip" ? "" : "none";
+}
+
+function closeModal() {
+  document.getElementById("overlay").style.display = "none";
+  editingId = null;
+}
+
+function handleOverlayClick(e) {
+  if (e.target === document.getElementById("overlay")) closeModal();
+}
+
+async function saveAsset() {
+  const payload = {
+    tipo:        document.getElementById("fTipo").value,
+    status:      document.getElementById("fStatus").value,
+    modelo:      document.getElementById("fModelo").value.trim(),
+    patrimonio:  document.getElementById("fPatrimonio").value.trim(),
+    serie:       document.getElementById("fSerie") ? document.getElementById("fSerie").value.trim() : "",
+    colaborador: document.getElementById("fColab").value.trim(),
+    observacao:  document.getElementById("fObs").value.trim(),
+  };
+  if (!payload.modelo) { toast("Informe o modelo.", true); return; }
+
+  const btn = document.querySelector(".btn-save");
+  btn.disabled = true; btn.textContent = "Salvando...";
+
+  if (editingId) {
+    payload.action = "update";
+    payload.id = editingId;
+    const res = await api(payload);
+    if (res && res.ok) { toast("✅ Ativo atualizado!"); closeModal(); await loadAssets(); }
+  } else {
+    payload.action = "add";
+    const res = await api(payload);
+    if (res && res.ok) { toast("✅ Ativo cadastrado!"); closeModal(); await loadAssets(); }
+  }
+  btn.disabled = false; btn.textContent = "Salvar";
+}
+
+// ─── DELETE ───────────────────────────────────────────────────────────────────
+function confirmDelete(id) {
+  deleteTarget = id;
+  const a = assets.find(x => String(x.id) === String(id));
+  document.getElementById("modalTitle").textContent = "Remover ativo?";
+  document.getElementById("modalBody").innerHTML = `
+    <p style="color:#444;font-size:14px">Tem certeza que deseja remover <strong>${esc(a?.modelo)}</strong> (${esc(a?.patrimonio)})?<br>Essa ação não pode ser desfeita.</p>
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeModal()">Cancelar</button>
+      <button class="btn-confirm-del" onclick="doDelete()">Remover</button>
+    </div>`;
+  document.getElementById("overlay").style.display = "flex";
+}
+
+async function doDelete() {
+  const res = await api({ action: "delete", id: deleteTarget });
+  if (res && res.ok) { toast("🗑 Ativo removido."); closeModal(); await loadAssets(); }
+}
+
+// ─── CONFIG ───────────────────────────────────────────────────────────────────
+function saveScriptUrl() {
+  const val = document.getElementById("scriptUrlInput").value.trim();
+  if (!val.startsWith("https://script.google.com")) { toast("URL inválida.", true); return; }
+  SCRIPT_URL = val;
+  localStorage.setItem(SCRIPT_URL_KEY, val);
+  document.getElementById("configBanner").style.display = "none";
+  toast("✅ Conectado! Carregando dados...");
+  loadAssets();
+}
+
+function showInstructions() {
+  document.getElementById("instrOverlay").style.display = "flex";
+}
+
+// ─── INIT ─────────────────────────────────────────────────────────────────────
+// always show config if no url
+if (!SCRIPT_URL) {
+  document.getElementById("configBanner").style.display = "flex";
+  assets = [];
+  renderAll();
+  renderGrid([]);
+} else {
+  loadAssets();
+}
+</script>
+</body>
+</html>
