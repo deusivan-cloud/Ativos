@@ -92,6 +92,20 @@
   .toast { position: fixed; bottom: 24px; right: 24px; background: #1A1A2E; color: #fff; padding: 12px 20px; border-radius: 10px; font-size: 14px; font-weight: 600; z-index: 100; box-shadow: 0 8px 24px rgba(0,0,0,.2); opacity: 0; transform: translateY(10px); transition: all .3s; pointer-events: none; }
   .toast.show { opacity: 1; transform: translateY(0); }
   .toast.error { background: #DC2626; }
+
+  /* LOGIN */
+  .login-overlay { position: fixed; inset: 0; background: #1A1A2E; z-index: 200; display: flex; align-items: center; justify-content: center; padding: 20px; }
+  .login-box { background: #fff; border-radius: 20px; padding: 40px 36px; width: 100%; max-width: 380px; box-shadow: 0 24px 60px rgba(0,0,0,0.4); text-align: center; }
+  .login-logo { font-size: 48px; margin-bottom: 8px; }
+  .login-title { font-size: 22px; font-weight: 800; color: #1A1A2E; margin-bottom: 4px; }
+  .login-sub { font-size: 13px; color: #999; margin-bottom: 28px; }
+  .login-field { margin-bottom: 14px; text-align: left; }
+  .login-field label { font-size: 12px; font-weight: 600; color: #555; display: block; margin-bottom: 4px; text-transform: uppercase; letter-spacing: .04em; }
+  .login-field input { width: 100%; padding: 11px 14px; border: 1.5px solid #E0E0E0; border-radius: 10px; font-size: 14px; outline: none; background: #FAFAFA; color: #1A1A2E; box-sizing: border-box; }
+  .login-field input:focus { border-color: #6C63FF; }
+  .btn-login { width: 100%; padding: 12px; background: #6C63FF; color: #fff; border: none; border-radius: 10px; font-size: 15px; font-weight: 700; cursor: pointer; margin-top: 6px; box-shadow: 0 4px 14px rgba(108,99,255,.35); }
+  .btn-login:hover { background: #5a52e0; }
+  .login-error { color: #DC2626; font-size: 13px; margin-top: 10px; display: none; }
 </style>
 </head>
 <body>
@@ -171,7 +185,7 @@
 <script>
 // ─── CONFIG ────────────────────────────────────────────────────────────────────
 const SCRIPT_URL_KEY = "ati_script_url";
-let SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzijbUSKPekACi2ImZyNYCX0bujt3cbXRkfqaD7cpOs7uBJV4VnyGphzmVNj6ye8HQfqQ/exec";
+let SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxfDnblHcKTedyRTWJoG-Bxvm9-jnbTMW0UMLFkocpA5RuMeCfRppLAEgwODKc8uG6CzA/exec";
 
 const ASSET_TYPES = {
   celular:  { label: "Celular",   icon: "📱", color: "#6C63FF" },
@@ -545,6 +559,48 @@ if (!SCRIPT_URL) {
   renderGrid([]);
 } else {
   loadAssets();
+}
+</script>
+
+<!-- LOGIN -->
+<div class="login-overlay" id="loginOverlay">
+  <div class="login-box">
+    <div class="login-logo">📦</div>
+    <div class="login-title">TI Corporativo</div>
+    <div class="login-sub">Gestão de Ativos — Acesso Restrito</div>
+    <div class="login-field">
+      <label>Usuário</label>
+      <input type="text" id="loginUser" placeholder="Digite seu usuário" onkeydown="if(event.key==='Enter')doLogin()" />
+    </div>
+    <div class="login-field">
+      <label>Senha</label>
+      <input type="password" id="loginPass" placeholder="Digite sua senha" onkeydown="if(event.key==='Enter')doLogin()" />
+    </div>
+    <button class="btn-login" onclick="doLogin()">Entrar</button>
+    <div class="login-error" id="loginError">Usuário ou senha incorretos.</div>
+  </div>
+</div>
+
+<script>
+// ─── LOGIN ─────────────────────────────────────────────────────────────────────
+const USERS = {
+  "admin": "ativos2024",
+  "ti": "ti@2024"
+};
+
+function doLogin() {
+  const user = document.getElementById("loginUser").value.trim();
+  const pass = document.getElementById("loginPass").value;
+  if (USERS[user] && USERS[user] === pass) {
+    sessionStorage.setItem("logado", "1");
+    document.getElementById("loginOverlay").style.display = "none";
+  } else {
+    document.getElementById("loginError").style.display = "block";
+  }
+}
+
+if (sessionStorage.getItem("logado") === "1") {
+  document.getElementById("loginOverlay").style.display = "none";
 }
 </script>
 </body>
